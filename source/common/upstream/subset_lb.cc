@@ -112,6 +112,9 @@ void SubsetLoadBalancer::refreshSubsets(uint32_t priority) {
   update(priority, host_sets[priority]->hosts(), {});
 }
 
+// TODO(mfalkowski)
+// it is only here to initialize fallback policies for selectors
+// change required here
 void SubsetLoadBalancer::initSubsetSelectorMap() {
   selectors_ = std::make_shared<SubsetSelectorMap>();
   SubsetSelectorMapPtr selectors;
