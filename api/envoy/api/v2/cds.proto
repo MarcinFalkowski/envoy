@@ -222,6 +222,11 @@ message Cluster {
         // If DEFAULT_SUBSET is selected, load balancing is performed over the
         // endpoints matching the values from the default_subset field.
         DEFAULT_SUBSET = 3;
+
+        // If KEYS_SUBSET is selected, subset selector matching is performed again with keys reduced to
+        // :ref:`fallback_key_subset<>`
+        // TODO(mfalkowski)
+        KEYS_SUBSET = 4;
       }
 
       // List of keys to match with the weighted cluster metadata.
@@ -231,6 +236,13 @@ message Cluster {
       // metadata.
       LbSubsetSelectorFallbackPolicy fallback_policy = 2
           [(validate.rules).enum = {defined_only: true}];
+
+      // Subset of
+      // :ref:`keys<>`
+      // used by :ref:`KEYS_SUBSET<envoy_api_enum_value_Cluster.LbSubsetConfig.LbSubsetFallbackPolicy.KEYS_SUBSET>`
+      // fallback policy.
+      // TODO(mfalkowski)
+      repeated string fallback_key_subset = 3;
     }
 
     // The behavior used when no endpoint subset matches the selected route's

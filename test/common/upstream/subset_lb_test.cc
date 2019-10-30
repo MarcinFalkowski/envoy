@@ -2021,14 +2021,18 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
                          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NO_FALLBACK}),
       std::make_shared<SubsetSelector>(SubsetSelector{
           {"version", "hardware"},
-          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::DEFAULT_SUBSET})};
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::DEFAULT_SUBSET}),
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"version", "stage"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::KEYS_SUBSET})};
 
   EXPECT_CALL(subset_info_, subsetSelectors()).WillRepeatedly(ReturnRef(subset_selectors));
 
   // Add hosts initial hosts.
   init({{"tcp://127.0.0.1:80", {{"version", "1.0"}, {"hardware", "c32"}}},
         {"tcp://127.0.0.1:81", {{"version", "1.0"}, {"hardware", "c32"}, {"foo", "bar"}}},
-        {"tcp://127.0.0.1:82", {{"version", "2.0"}, {"hardware", "c32"}, {"stage", "dev"}}}});
+        {"tcp://127.0.0.1:82", {{"version", "2.0"}, {"hardware", "c32"}, {"stage", "dev"}}},
+        {"tcp://127.0.0.1:82", {{"version", "2.0"}}}});
 
   TestLoadBalancerContext context_match_host0({{"version", "1.0"}, {"hardware", "c32"}});
   TestLoadBalancerContext context_ver_nx({{"version", "x"}, {"hardware", "c32"}});
@@ -2039,6 +2043,8 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
   TestLoadBalancerContext context_match_host2(
       {{"version", "2.0"}, {"hardware", "c32"}, {"stage", "dev"}});
   TestLoadBalancerContext context_ver_20({{"version", "2.0"}});
+  TestLoadBalancerContext context_ver_stage_match_host2({{"version", "2.0"}, {"stage", "dev"}});
+  TestLoadBalancerContext context_ver_stage_nx({{"version", "2.0"}, {"stage", "canary"}});
 
   EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_match_host0));
   EXPECT_EQ(host_set_.hosts_[1], lb_->chooseHost(&context_ver_nx));
@@ -2047,6 +2053,10 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_match_host2));
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_match_host2));
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_20));
+  EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_match_host2));
+  EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_match_host2));
+  EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_nx));
+  EXPECT_EQ(host_set_.hosts_[3], lb_->chooseHost(&context_ver_stage_nx));
 }
 
 INSTANTIATE_TEST_SUITE_P(UpdateOrderings, SubsetLoadBalancerTest,
