@@ -242,7 +242,7 @@ message Cluster {
       // used by :ref:`KEYS_SUBSET<envoy_api_enum_value_Cluster.LbSubsetConfig.LbSubsetFallbackPolicy.KEYS_SUBSET>`
       // fallback policy.
       // TODO(mfalkowski)
-      repeated string fallback_key_subset = 3;
+      repeated string fallback_keys_subset = 3;
     }
 
     // The behavior used when no endpoint subset matches the selected route's
