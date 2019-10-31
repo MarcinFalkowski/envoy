@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <envoy/upstream/load_balancer_type.h>
 
 #include "envoy/runtime/runtime.h"
 #include "envoy/upstream/upstream.h"
