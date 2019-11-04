@@ -1889,6 +1889,34 @@ TEST_P(SubsetLoadBalancerTest, SubsetSelectorNoFallbackPerSelector) {
   EXPECT_EQ(4U, stats_.lb_subsets_selected_.value());
 }
 
+TEST_P(SubsetLoadBalancerTest, FallbackNotDefinedForIntermediateSelector) {
+  EXPECT_CALL(subset_info_, fallbackPolicy())
+      .WillRepeatedly(Return(envoy::api::v2::Cluster::LbSubsetConfig::ANY_ENDPOINT));
+
+  std::vector<SubsetSelectorPtr> subset_selectors = {
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"stage"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NOT_DEFINED, {}}),
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"stage","version"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::ANY_ENDPOINT, {}})};
+
+  EXPECT_CALL(subset_info_, subsetSelectors()).WillRepeatedly(ReturnRef(subset_selectors));
+
+  init({
+    {"tcp://127.0.0.1:80", {{"version", "1.0"}, {"stage", "dev"}}},
+    {"tcp://127.0.0.1:80", {{"version", "1.0"}, {"stage", "canary"}}}
+  });
+
+  TestLoadBalancerContext context_match_host0({{"stage", "dev"}});
+  TestLoadBalancerContext context_stage_nx({{"stage", "test"}});
+
+  EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_match_host0));
+  EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_match_host0));
+  EXPECT_EQ(host_set_.hosts_[1], lb_->chooseHost(&context_stage_nx));
+  EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_stage_nx));
+}
+
 TEST_P(SubsetLoadBalancerTest, SubsetSelectorFallbackOverridesTopLevelOne) {
   EXPECT_CALL(subset_info_, fallbackPolicy())
       .WillRepeatedly(Return(envoy::api::v2::Cluster::LbSubsetConfig::ANY_ENDPOINT));
@@ -2028,10 +2056,11 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
 
   std::vector<SubsetSelectorPtr> subset_selectors = {
       std::make_shared<SubsetSelector>(SubsetSelector{
-          {"version"}, envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NOT_DEFINED, {}}),
-      std::make_shared<SubsetSelector>(
-          SubsetSelector{{"version", "hardware", "stage"},
-                         envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NO_FALLBACK, {}}),
+          {"version"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NOT_DEFINED, {}}),
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"version", "hardware", "stage"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NO_FALLBACK, {}}),
       std::make_shared<SubsetSelector>(SubsetSelector{
           {"version", "hardware"},
           envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::DEFAULT_SUBSET, {}}),
