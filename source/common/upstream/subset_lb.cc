@@ -253,6 +253,7 @@ HostConstSharedPtr SubsetLoadBalancer::chooseHostForSelectorFallbackPolicy(
     ASSERT(fallback_params.fallback_keys_subset_);
     auto filtered_context = std::make_unique<LoadBalancerContextWrapper>(
         context, *fallback_params.fallback_keys_subset_);
+    // Perform whole subset load balancing again with reduced metadata match criteria
     return chooseHost(filtered_context.get());
   } else {
     return nullptr;
