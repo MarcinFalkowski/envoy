@@ -81,6 +81,19 @@ public:
     return nullptr;
   }
 
+  Router::MetadataMatchCriteriaConstPtr
+  filterMatchCriteria(const std::set<std::string>& names) const override {
+    auto new_criteria = std::make_unique<TestMetadataMatchCriteria>(*this);
+    for (auto it = new_criteria->matches_.begin(); it != new_criteria->matches_.end();) {
+      if (names.count(it->get()->name()) == 0) {
+        it = new_criteria->matches_.erase(it);
+      } else {
+        it++;
+      }
+    }
+    return new_criteria;
+  }
+
 private:
   std::vector<Router::MetadataMatchCriterionConstSharedPtr> matches_;
 };
@@ -2032,7 +2045,7 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
   init({{"tcp://127.0.0.1:80", {{"version", "1.0"}, {"hardware", "c32"}}},
         {"tcp://127.0.0.1:81", {{"version", "1.0"}, {"hardware", "c32"}, {"foo", "bar"}}},
         {"tcp://127.0.0.1:82", {{"version", "2.0"}, {"hardware", "c32"}, {"stage", "dev"}}},
-        {"tcp://127.0.0.1:82", {{"version", "2.0"}}}});
+        {"tcp://127.0.0.1:83", {{"version", "2.0"}}}});
 
   TestLoadBalancerContext context_match_host0({{"version", "1.0"}, {"hardware", "c32"}});
   TestLoadBalancerContext context_ver_nx({{"version", "x"}, {"hardware", "c32"}});
@@ -2055,9 +2068,11 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_20));
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_match_host2));
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_match_host2));
-  EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_nx));
   EXPECT_EQ(host_set_.hosts_[3], lb_->chooseHost(&context_ver_stage_nx));
+  EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_nx));
 }
+
+// TODO(mfalkowski): tests for: chained KEYS_SUBSET fallback
 
 INSTANTIATE_TEST_SUITE_P(UpdateOrderings, SubsetLoadBalancerTest,
                          testing::ValuesIn({REMOVES_FIRST, SIMULTANEOUS}));
