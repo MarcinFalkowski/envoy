@@ -2072,7 +2072,7 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_nx));
 }
 
-// TODO(mfalkowski): tests for: chained KEYS_SUBSET fallback
+// TODO(mfalkowski): tests for: chained KEYS_SUBSET fallback, keys_subset to non-existing selector
 
 INSTANTIATE_TEST_SUITE_P(UpdateOrderings, SubsetLoadBalancerTest,
                          testing::ValuesIn({UpdateOrder::RemovesFirst, UpdateOrder::Simultaneous}));

@@ -238,7 +238,6 @@ SubsetLoadBalancer::tryFindSelectorFallbackParams(LoadBalancerContext* context) 
 HostConstSharedPtr SubsetLoadBalancer::chooseHostForSelectorFallbackPolicy(
     const SubsetSelectorFallbackParams& fallback_params,
     LoadBalancerContext* context) {
-  ASSERT(fallback_params.fallback_keys_subset_);
   const auto& fallback_policy = fallback_params.fallback_policy_;
   if (fallback_policy == envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::ANY_ENDPOINT &&
       selector_fallback_subset_any_ != nullptr) {
@@ -249,6 +248,7 @@ HostConstSharedPtr SubsetLoadBalancer::chooseHostForSelectorFallbackPolicy(
     return selector_fallback_subset_default_->priority_subset_->lb_->chooseHost(context);
   } else if (fallback_policy ==
               envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::KEYS_SUBSET) {
+    ASSERT(fallback_params.fallback_keys_subset_);
     auto filtered_context = std::make_unique<LoadBalancerContextWrapper>(
         context, *fallback_params.fallback_keys_subset_);
     return chooseHost(filtered_context.get());
