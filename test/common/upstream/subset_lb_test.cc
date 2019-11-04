@@ -1905,7 +1905,7 @@ TEST_P(SubsetLoadBalancerTest, FallbackNotDefinedForIntermediateSelector) {
 
   init({
     {"tcp://127.0.0.1:80", {{"version", "1.0"}, {"stage", "dev"}}},
-    {"tcp://127.0.0.1:80", {{"version", "1.0"}, {"stage", "canary"}}}
+    {"tcp://127.0.0.1:81", {{"version", "1.0"}, {"stage", "canary"}}}
   });
 
   TestLoadBalancerContext context_match_host0({{"stage", "dev"}});
@@ -1913,8 +1913,8 @@ TEST_P(SubsetLoadBalancerTest, FallbackNotDefinedForIntermediateSelector) {
 
   EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_match_host0));
   EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_match_host0));
-  EXPECT_EQ(host_set_.hosts_[1], lb_->chooseHost(&context_stage_nx));
   EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_stage_nx));
+  EXPECT_EQ(host_set_.hosts_[1], lb_->chooseHost(&context_stage_nx));
 }
 
 TEST_P(SubsetLoadBalancerTest, SubsetSelectorFallbackOverridesTopLevelOne) {

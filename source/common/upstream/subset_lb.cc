@@ -179,9 +179,11 @@ HostConstSharedPtr SubsetLoadBalancer::chooseHost(LoadBalancerContext* context) 
     // otherwise check if there is fallback policy configured for given route metadata
     absl::optional<SubsetSelectorFallbackParamsRef> selector_fallback_params =
         tryFindSelectorFallbackParams(context);
-    if (selector_fallback_params) {
+    if (selector_fallback_params &&
+        selector_fallback_params->get().fallback_policy_ !=
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NOT_DEFINED) {
       // return result according to configured fallback policy
-      return chooseHostForSelectorFallbackPolicy(selector_fallback_params.value(), context);
+      return chooseHostForSelectorFallbackPolicy(*selector_fallback_params, context);
     }
   }
 
