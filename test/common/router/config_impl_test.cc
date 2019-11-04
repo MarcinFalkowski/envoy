@@ -5094,6 +5094,8 @@ TEST(MetadataMatchCriteriaImpl, Merge) {
   EXPECT_EQ((*it)->value().value().string_value(), "override3");
 }
 
+// TODO(mfalkowski) - add test for MetadataMatchCriteriaImpl::filterMatchCriteria
+
 class RouteEntryMetadataMatchTest : public testing::Test, public ConfigImplTestBase {};
 
 TEST_F(RouteEntryMetadataMatchTest, ParsesMetadata) {
