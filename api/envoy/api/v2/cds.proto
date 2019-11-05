@@ -224,7 +224,7 @@ message Cluster {
         DEFAULT_SUBSET = 3;
 
         // If KEYS_SUBSET is selected, subset selector matching is performed again with metadata keys reduced to
-        // :ref:`fallback_keys_subset<envoy_api_field_Cluster.LbSubsetConfig.LbSubsetSelector.fallback_keys_subset>`
+        // :ref:`fallback_keys_subset<envoy_api_field_Cluster.LbSubsetConfig.LbSubsetSelector.fallback_keys_subset>`.
         KEYS_SUBSET = 4;
       }
 
