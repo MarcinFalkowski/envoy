@@ -223,9 +223,8 @@ message Cluster {
         // endpoints matching the values from the default_subset field.
         DEFAULT_SUBSET = 3;
 
-        // If KEYS_SUBSET is selected, subset selector matching is performed again with keys reduced to
-        // :ref:`fallback_key_subset<>`
-        // TODO(mfalkowski)
+        // If KEYS_SUBSET is selected, subset selector matching is performed again with metadata keys reduced to
+        // :ref:`fallback_keys_subset<envoy_api_field_Cluster.LbSubsetConfig.LbSubsetSelector.fallback_keys_subset>`
         KEYS_SUBSET = 4;
       }
 
@@ -238,10 +237,13 @@ message Cluster {
           [(validate.rules).enum = {defined_only: true}];
 
       // Subset of
-      // :ref:`keys<>`
-      // used by :ref:`KEYS_SUBSET<envoy_api_enum_value_Cluster.LbSubsetConfig.LbSubsetFallbackPolicy.KEYS_SUBSET>`
+      // :ref:`keys<envoy_api_field_Cluster.LbSubsetConfig.LbSubsetSelector.keys>` used by
+      // :ref:`KEYS_SUBSET<envoy_api_enum_value_Cluster.LbSubsetConfig.LbSubsetSelector.LbSubsetSelectorFallbackPolicy.KEYS_SUBSET>`
       // fallback policy.
-      // TODO(mfalkowski)
+      // It has to be a non empty list if KEYS_SUBSET fallback policy is selected.
+      // For any other fallback policy the parameter is not used and should not be set.
+      // Only values also present in :ref:`keys<envoy_api_field_Cluster.LbSubsetConfig.LbSubsetSelector.keys>`
+      // are allowed, but `fallback_keys_subset` cannot be equal to `keys`.
       repeated string fallback_keys_subset = 3;
     }
 
