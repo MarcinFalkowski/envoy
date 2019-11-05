@@ -2101,7 +2101,57 @@ TEST_P(SubsetLoadBalancerTest, FallbackForCompoundSelector) {
   EXPECT_EQ(host_set_.hosts_[2], lb_->chooseHost(&context_ver_stage_nx));
 }
 
-// TODO(mfalkowski): tests for: chained KEYS_SUBSET fallback, keys_subset to non-existing selector
+TEST_P(SubsetLoadBalancerTest, KeysSubsetFallbackChained) {
+  EXPECT_CALL(subset_info_, fallbackPolicy())
+      .WillRepeatedly(Return(envoy::api::v2::Cluster::LbSubsetConfig::NO_FALLBACK));
+
+  std::vector<SubsetSelectorPtr> subset_selectors = {
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"stage"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::NO_FALLBACK, {}}),
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"stage", "version"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::KEYS_SUBSET, {"stage"}}),
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"stage", "version", "hardware"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::KEYS_SUBSET, {"version", "stage"}})};
+
+  EXPECT_CALL(subset_info_, subsetSelectors()).WillRepeatedly(ReturnRef(subset_selectors));
+
+  init({{"tcp://127.0.0.1:80", {{"version", "1.0"}, {"hardware", "c32"}, {"stage", "dev"}}},
+        {"tcp://127.0.0.1:81", {{"version", "2.0"}, {"hardware", "c64"}, {"stage", "dev"}}},
+        {"tcp://127.0.0.1:82", {{"version", "1.0"}, {"hardware", "c32"}, {"stage", "test"}}}});
+
+  TestLoadBalancerContext context_match_host0({{"version", "1.0"}, {"hardware", "c32"}, {"stage", "dev"}});
+  TestLoadBalancerContext context_hw_nx({{"version", "2.0"}, {"hardware", "arm"}, {"stage", "dev"}});
+  TestLoadBalancerContext context_ver_hw_nx({{"version", "1.2"}, {"hardware", "arm"}, {"stage", "dev"}});
+
+  EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_match_host0));
+  EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_match_host0));
+  EXPECT_EQ(host_set_.hosts_[1], lb_->chooseHost(&context_hw_nx));
+  EXPECT_EQ(host_set_.hosts_[1], lb_->chooseHost(&context_hw_nx));
+  EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_ver_hw_nx));
+  EXPECT_EQ(host_set_.hosts_[1], lb_->chooseHost(&context_ver_hw_nx));
+}
+
+TEST_P(SubsetLoadBalancerTest, KeysSubsetFallbackToNotExistingSelector) {
+  EXPECT_CALL(subset_info_, fallbackPolicy())
+      .WillRepeatedly(Return(envoy::api::v2::Cluster::LbSubsetConfig::ANY_ENDPOINT));
+
+  std::vector<SubsetSelectorPtr> subset_selectors = {
+      std::make_shared<SubsetSelector>(SubsetSelector{
+          {"stage", "version"},
+          envoy::api::v2::Cluster::LbSubsetConfig::LbSubsetSelector::KEYS_SUBSET, {"stage"}})};
+
+  EXPECT_CALL(subset_info_, subsetSelectors()).WillRepeatedly(ReturnRef(subset_selectors));
+
+  init({{"tcp://127.0.0.1:80", {{"version", "1.0"}, {"stage", "dev"}}}});
+
+  TestLoadBalancerContext context_nx({{"version", "1.0"}, {"stage", "test"}});
+
+  EXPECT_EQ(host_set_.hosts_[0], lb_->chooseHost(&context_nx));
+  EXPECT_EQ(1U, stats_.lb_subsets_fallback_.value());
+}
 
 INSTANTIATE_TEST_SUITE_P(UpdateOrderings, SubsetLoadBalancerTest,
                          testing::ValuesIn({UpdateOrder::RemovesFirst, UpdateOrder::Simultaneous}));
